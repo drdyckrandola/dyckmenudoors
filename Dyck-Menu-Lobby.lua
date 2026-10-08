@@ -64,7 +64,7 @@ if not getgenv().DyckLobby then
     local Toggles = Library.Toggles
 
     local Window = Library:CreateWindow({
-        Title = "Dyck Menu | Doors Lobby",
+        Title = "Dyck | Menu",
         Center = true,
         AutoShow = true,
         Resizable = true,
@@ -86,9 +86,9 @@ if not getgenv().DyckLobby then
     local infTab = Tabs.Info:AddLeftTabbox()
     local inffirsttab = infTab:AddTab('Update Log')
     inffirsttab:AddLabel("\n<DOORS LOBBY>")
-    inffirsttab:AddLabel("<font color='#1eff00'>+ Auto Join Elevator</font>")
-    inffirsttab:AddLabel("<font color='#1eff00'>+ Redeem All Codes</font>")
-    inffirsttab:AddLabel("<font color='#1eff00'>+ Cycle Achievements</font>")
+    inffirsttab:AddLabel("<font color='#0000FF'>+ Auto Join Elevator</font>")
+    inffirsttab:AddLabel("<font color='#0000FF'>+ Redeem All Codes</font>")
+    inffirsttab:AddLabel("<font color='#0000FF'>+ Cycle Achievements</font>")
 
     local mntab = Tabs.Main:AddLeftTabbox()
     local mainft = mntab:AddTab('LocalPlayer')
@@ -361,7 +361,7 @@ if not getgenv().DyckLobby then
 
     MenuGroup:AddDivider()
     MenuGroup:AddButton('Copy Discord Server Link', function()
-        setclipboard("https://discord.gg/HjqzMPJveZ")
+        setclipboard("https://discord.gg/randolas")
         Library:Notify("<b>[Dyck]</b> Link copiado!")
     end)
 
@@ -380,7 +380,7 @@ if not getgenv().DyckLobby then
     Library.ToggleKeybind = Options.MenuKeybind
 
     local AboutGroup = Tabs['UI Settings']:AddRightGroupbox('Contributors')
-    AboutGroup:AddLabel("<font color='#15ff00'>Dyck Menu</font> - Lobby Edition")
+    AboutGroup:AddLabel("<font color='#0000FF'>Dyck Menu</font> - Lobby Edition")
     
     ThemeManager:SetLibrary(Library)
     SaveManager:SetLibrary(Library)
