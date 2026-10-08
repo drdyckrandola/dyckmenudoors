@@ -5,7 +5,7 @@
 
 local DyckLoader = {
     Version = "2.0.0",
-    Repo = "https://raw.githubusercontent.com/drdyckrandola/dyckmenudoors/refs/heads/main/",
+    Repo = "https://github.com/drdyckrandola/dyckmenudoors/blob/main",
     Scripts = {
         Lobby = "Dyck-Menu-Lobby.lua",
         InGame = "Dyck-Menu-Doors.lua"
