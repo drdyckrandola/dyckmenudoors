@@ -1,11 +1,10 @@
 -- ==========================================
--- DYCK MENU | MASTER LOADER
--- Detecta o ambiente (Lobby, In-Game, Hardcore)
--- e carrega a versão correta do hub.
+-- DYCK MENU | MASTER LOADER (V2.0)
+-- Corrigido para detecção precisa de Lobby/In-Game
 -- ==========================================
 
 local DyckLoader = {
-    Version = "1.0.0",
+    Version = "2.0.0",
     Repo = "https://raw.githubusercontent.com/drdyckrandola/dyckmenudoors/refs/heads/main/",
     Scripts = {
         Lobby = "Dyck-Menu-Lobby.lua",
@@ -13,75 +12,90 @@ local DyckLoader = {
     }
 }
 
--- 1. DETECÇÃO DE AMBIENTE
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local LocalPlayer = Players.LocalPlayer
+
+-- 1. AGUARDA O JOGO CARREGAR
+repeat task.wait() until game:IsLoaded()
+repeat task.wait() until LocalPlayer
+
+-- 2. FUNÇÃO DE DETECÇÃO APRENDIDA
 local function DetectEnvironment()
     local placeId = game.PlaceId
-    local rs = game:GetService("ReplicatedStorage")
     
-    -- Place IDs conhecidos do Doors
-    local KNOWN_LOBBY_IDS = {
-        [6516141723] = true, -- Lobby Principal
-    }
-    
-    local KNOWN_GAME_IDS = {
-        [6839171747] = true, -- Jogo Principal
-        [110258689672367] = true, -- Jogo Principal (Novo ID)
-    }
-    
-    local KNOWN_HARDWARE_IDS = {
-        [137519142947486] = true, -- Hardcore
-    }
+    -- Place IDs Conhecidos (Prioridade Máxima)
+    if placeId == 6516141723 then return "Lobby" end
+    if placeId == 6839171747 or placeId == 110258689672367 then return "In-Game" end
+    if placeId == 137519142947486 then return "In-Game" end -- Hardcore usa a mesma lógica de In-Game
 
-    -- Lógica de Detecção
-    if KNOWN_LOBBY_IDS[placeId] then
-        return "Lobby"
-    elseif KNOWN_HARDWARE_IDS[placeId] then
-        return "Hardcore" -- O script In-Game é robusto o suficiente para Hardcore, 
-                          -- mas se você tiver uma versão específica, troque aqui.
-    elseif KNOWN_GAME_IDS[placeId] then
+    -- Fallback: Detecção por Estrutura de Dados
+    -- Espera até que o ReplicatedStorage tenha os dados essenciais
+    task.wait(2) 
+
+    if ReplicatedStorage:FindFirstChild("GameData") and ReplicatedStorage.GameData:FindFirstChild("Floor") then
         return "In-Game"
-    else
-        -- Fallback: Se o PlaceId não for conhecido, checa a estrutura de dados
-        if rs:FindFirstChild("GameData") and rs.GameData:FindFirstChild("Floor") then
-            return "In-Game"
-        elseif rs:FindFirstChild("LobbyData") or (rs:FindFirstChild("RemotesFolder") and rs.RemotesFolder:FindFirstChild("ElevatorJoin")) then
-            return "Lobby"
-        else
-            -- Último recurso: assume In-Game se houver CurrentRooms
-            if workspace:FindFirstChild("CurrentRooms") then
-                return "In-Game"
-            end
+    end
+    
+    if ReplicatedStorage:FindFirstChild("RemotesFolder") then
+        local rf = ReplicatedStorage.RemotesFolder
+        -- Remotes específicos de Lobby
+        if rf:FindFirstChild("ElevatorJoin") or rf:FindFirstChild("ShopCode") or rf:FindFirstChild("FlexAchievement") then
             return "Lobby"
         end
+        -- Remotes específicos de In-Game
+        if rf:FindFirstChild("ShadeResult") or rf:FindFirstChild("A90") or rf:FindFirstChild("Crouch") then
+            return "In-Game"
+        end
     end
+
+    -- Último Fallback: Verifica Workspace
+    if workspace:FindFirstChild("CurrentRooms") then
+        return "In-Game"
+    end
+    
+    return "Lobby" -- Assume Lobby se nada for encontrado (mais comum em PlaceIds novos de lobby)
 end
 
--- 2. CARREGAMENTO DO SCRIPT
-local function LoadScript(scriptName)
+-- 3. FUNÇÃO DE CARREGAMENTO
+local function LoadScript(scriptName, environment)
     local url = DyckLoader.Repo .. scriptName
-    print(("[Dyck Loader]): Carregando %s (%s)..."):format(scriptName, url))
+    print(("[Dyck Loader v%s]): Carregando %s para %s..."):format(DyckLoader.Version, scriptName, environment))
     
+    -- Se for Lobby, aguarda a UI específica carregar para evitar erros de nil
+    if environment == "Lobby" then
+        print("[Dyck Loader]: Aguardando UI do Lobby...")
+        local gui = LocalPlayer:WaitForChild("PlayerGui")
+        local mainUI = gui:WaitForChild("MainUI", 10)
+        if mainUI then
+            -- Aguarda a LobbyFrame específica do Doors Lobby
+            local lobbyFrame = mainUI:WaitForChild("LobbyFrame", 10)
+            if not lobbyFrame then
+                warn("[Dyck Loader]: LobbyFrame não encontrada. Tentando carregar mesmo assim.")
+            end
+        end
+    end
+
     local ok, result = pcall(function()
         local source = game:HttpGet(url)
         loadstring(source)()
     end)
     
     if not ok then
-        warn(("[Dyck Loader]): ERRO ao carregar o script!\n%s"):format(result))
+        warn(("[Dyck Loader]: ERRO ao carregar o script!\n%s"):format(result))
     else
         print(("[Dyck Loader]): %s carregado com sucesso."):format(scriptName))
     end
 end
 
--- 3. EXECUÇÃO
+-- 4. EXECUÇÃO
 local environment = DetectEnvironment()
 print(("[Dyck Loader]): Ambiente detectado: %s"):format(environment)
 
 if environment == "Lobby" then
-    LoadScript(DyckLoader.Scripts.Lobby)
+    LoadScript(DyckLoader.Scripts.Lobby, environment)
 else
-    -- In-Game e Hardcore usam o mesmo script principal (que é robusto)
-    LoadScript(DyckLoader.Scripts.InGame)
+    LoadScript(DyckLoader.Scripts.InGame, environment)
 end
 
-print(("[Dyck Loader]): Initialização concluída. Bom jogo! 🚀"))
+print(("[Dyck Loader]): Inicialização concluída. Dyck Menu ativo. 🚀"))
