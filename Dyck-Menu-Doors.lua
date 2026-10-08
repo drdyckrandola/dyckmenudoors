@@ -51,6 +51,8 @@ end
 		["AmbushMoving"] = "Ambush",
 		["A60"] = "A-60",
 		["A120"] = "A-120",
+		["Drone"] = "Drone",
+		["Bash"] = "Bash",
 		["BackdoorRush"] = "Blitz",
 		["Eyes"] = "Eyes",
         ["Lookman"] = "Eyes",
@@ -136,6 +138,11 @@ end
 	FakeA90Event.Name = "A90"
 	FakeA90Event.Parent = ReplicatedStorage
 
+	RansomEvent = RemotesFolder:FindFirstChild("Ransom") or Instance.new("RemoteEvent")
+	FakeRansomEvent = Instance.new("RemoteEvent")
+	FakeRansomEvent.Name = "Ransom"
+	FakeRansomEvent.Parent = ReplicatedStorage
+
 	ScreechEvent = RemotesFolder:FindFirstChild("Screech") or Instance.new("RemoteEvent")
 	FakeScreechEvent = Instance.new("RemoteEvent")
 	FakeScreechEvent.Name = "Screech"
@@ -155,7 +162,10 @@ local SupportedFloors = {
     "Backdoor",
     "Fools26",
     "Rooms",
-    "Party"
+    "Party",
+    "Archives",
+    "Stairwell"
+
 }
 
 		local OldHotel = false
@@ -186,7 +196,7 @@ end
 	end
 
 	local Window = Library:CreateWindow({
-		Title = "BlackKing | Doors",
+		Title = "Dyck | Menu",
 		Center = true,
 		AutoShow = true,
 		Resizable = true,
@@ -212,10 +222,10 @@ getgenv().Bk = true
 	local inffirsttab = infTab:AddTab('Update Log')
 
 			inffirsttab:AddLabel("\n<DOORS>")
-    inffirsttab:AddLabel("<font color='#1eff00'>+ Lobby Support</font>")
+    inffirsttab:AddLabel("<font color='#0000FF'>+ Lobby Support</font>")
 
 	inffirsttab:AddLabel("\n<SCRIPT>")
-    inffirsttab:AddLabel("<font color='#1eff00'>+ Auto Show Ui when loaded</font>")
+    inffirsttab:AddLabel("<font color='#0000FF'>+ Auto Show Ui when loaded</font>")
 
 	local mnTAB = Tabs.Main:AddLeftTabbox()
 	local firsttab = mnTAB:AddTab('General')
@@ -1965,6 +1975,8 @@ local EntityEspNames = {
     ["GlitchRush"] = "RNIUSHCG",
     ["GlitchedAmbush"]      = "AR0xMBUSH",
     ["A60"]               = "A-60",
+    ["Bash"]               = "Bash",
+    ["Drone"]               = "Drone",
     ["A120"]              = "A-120",
     ["Eyes"]              = "Eyes",
     ["Lookman"]           = "Eyes",
@@ -2090,6 +2102,16 @@ local function CreateEntityESP(entityModel)
 
     if entityModel.Name == "BackdoorRush" then
         SetupEntityPartESP(entityModel, "Main", "Blitz")
+        return
+    end
+
+    if entityModel.Name == "Drone" then
+        SetupEntityPartESP(entityModel, "Main", "Drone")
+        return
+    end
+
+    if entityModel.Name == "Bash" then
+        SetupEntityPartESP(entityModel, "Main", "Bash")
         return
     end
 
@@ -2884,10 +2906,12 @@ notifiedHalt = false
 
 CustomMessages = {
     Rush = "<b>[BlackKing]</b>\nEntity 'Rush' has spawned, find a hiding spot.",
+    Bash = "<b>[BlackKing]</b>\nEntity 'Bash' has spawned, find a hiding spot.",
     Ambush = "<b>[BlackKing]</b>\nEntity 'Ambush' has spawned, find a hiding spot.",
     Blitz = "<b>[BlackKing]</b>\nEntity 'Blitz' has spawned, find a hiding spot.",
     Eyes = "<b>[BlackKing]</b>\nEntity 'Eyes' has spawned, avoid looking at them.",
     Lookman = "<b>[BlackKing]</b>\nEntity 'Lookman' has spawned, avoid looking at him.",
+    Drone = "<b>[BlackKing]</b>\nEntity 'Drone' has spawned in the next room.",
     ["Jeff The Killer"] = "<b>[BlackKing]</b>\nEntity 'Jeff The Killer' has spawned in the next room.",
     ["Custom Entity"] = "<b>[BlackKing]</b>\nA custom entity has spawned, find a hiding spot.",
     ["A-60"] = "<b>[BlackKing]</b>\nEntity 'A-60' has spawned, find a hiding spot.",
@@ -2902,7 +2926,7 @@ CustomMessages = {
 }
 
 SecTabnot:AddDropdown('NotifyMonsters', {
-    Values = {"Rush","Ambush","Blitz","Eyes","Lookman","Jeff The Killer","Custom Entity","A-60","A-120","Gloombat Swarm","Halt","Sally","Groundskeeper","Monument","RNIUSHCG","AR0xMBUSH"},
+    Values = {"Rush","Ambush","Blitz","Eyes","Lookman","Jeff The Killer","Custom Entity","A-60","A-120","Gloombat Swarm","Halt","Sally","Groundskeeper","Monument","RNIUSHCG","AR0xMBUSH", "Bash", "Drone"},
     Default = {},
     Multi = true,
     Compact = true,
@@ -3794,6 +3818,22 @@ thirdtab:AddToggle('AntiA90', {
 
 	end
 })
+
+thirdtab:AddToggle('AntiRansom', {
+	Text = 'No Ransom Damage',
+	Default = false, 
+	Tooltip = 'Prevents Ransom from doing any damage.',
+	Callback = function(Value)
+	if Value == true then
+		RansomEvent.Parent = Services.ReplicatedStorage
+		FakeRansomEvent.Parent = RemotesFolder
+	else
+		RansomEvent.Parent = RemotesFolder
+		FakeRansomEvent.Parent = Services.ReplicatedStorage
+	end
+
+	end
+})
 thirdtab:AddToggle('AntiScreecha', {
 	Text = 'No Screech Damage',
 	Default = false, 
@@ -4385,6 +4425,30 @@ thirdtabbyp:AddToggle('RemoveA90', {
             A90.Name = "A90_Disabled"
         else
             A90.Name = "A90"
+        end
+    end
+})
+
+thirdtabbyp:AddToggle('RemoveRansom', {
+    Text = 'Disable Ransom',
+    Default = false,
+    Tooltip = 'Prevents Ransom from spawning.',
+
+    Callback = function(Value)
+
+        local Ransom =
+            game:GetService("Players").LocalPlayer.PlayerGui.MainUI.Initiator.Main_Game.RemoteListener.Modules:FindFirstChild("Ransom")
+            or game:GetService("Players").LocalPlayer.PlayerGui.MainUI.Initiator.Main_Game.RemoteListener.Modules:FindFirstChild("_Ransom")
+            or game:GetService("Players").LocalPlayer.PlayerGui.MainUI.Initiator.Main_Game.RemoteListener.Modules:FindFirstChild("Ransom_Disabled")
+
+        if not Ransom then
+            return
+        end
+
+        if Value then
+            Ransom.Name = "Ransom_Disabled"
+        else
+            Ransom.Name = "Ransom"
         end
     end
 })
@@ -5756,8 +5820,8 @@ end)
 
 	local AboutGroup = Tabs['UI Settings']:AddRightGroupbox('Contributors')
 
-	AboutGroup:AddLabel("<font color='#15ff00'>bocaj11104</font> - Esp Library")
-    AboutGroup:AddLabel("<font color='#15ff00'>Abbas</font> - Helped with \nPosition Spoof")
+	AboutGroup:AddLabel("<font color='#0000FF'>blackking</font> - All")
+    AboutGroup:AddLabel("<font color='#0000FF'>gpt</font> - Helped with Infinity Revive!")
 	ThemeManager:SetLibrary(Library)
 	SaveManager:SetLibrary(Library)
 	SaveManager:IgnoreThemeSettings()
